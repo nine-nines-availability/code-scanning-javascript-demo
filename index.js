@@ -262,6 +262,9 @@ exports.extract = function (cwd, opts) {
       if (win32) return next() // skip links on win for now before it can be tested
       xfs.unlink(name, function () {
         var srcpath = path.resolve(cwd, header.linkname)
+        if (!isValidPath(srcpath, cwd)) {
+          return next(new Error('Invalid path: ' + header.linkname))
+        }
 
         xfs.link(srcpath, name, function (err) {
           if (err && err.code === 'EPERM' && opts.hardlinkAsFilesFallback) {
@@ -323,6 +326,11 @@ exports.extract = function (cwd, opts) {
   if (opts.finish) extract.on('finish', opts.finish)
 
   return extract
+}
+
+function isValidPath(filePath, root) {
+  const relative = path.relative(root, filePath)
+  return !relative.startsWith('..') && !path.isAbsolute(relative)
 }
 
 function validate (fs, name, root, cb) {
